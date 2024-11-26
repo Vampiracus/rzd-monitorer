@@ -1,10 +1,9 @@
 import { Telegraf } from "telegraf"
-import { message } from "telegraf/filters"
 import { findAll } from "./findTrains"
-import { URLS } from "./url"
 import fs from "node:fs"
 
 import ids from "./ids.json"
+import { checkCommand, configCommand, helpCommand, startCommand, whoisthisCommand } from "./commands"
 
 const bot = new Telegraf(process.env.BOT_TOKEN!)
 
@@ -22,27 +21,26 @@ bot.telegram.setMyCommands([
   {
     command: "config",
     description: "Посмотреть конфигурацию"
+  },
+  {
+    command: "unsubscribe",
+    description: "Отписаться от рассылки"
   }
 ])
 
-bot.start((ctx) => ctx.reply('Привет! Напиши /subscribe, чтобы подписаться на рассылку'))
-bot.help((ctx) => ctx.reply('/check, /subscribe'))
-bot.command("whoisthis", (ctx) => {
-  ctx.reply(`This is ${ctx.botInfo.username}. And you are ${ctx.from.first_name} ${ctx.from.last_name}`)
-})
-bot.command("check", async (ctx) => {
-  const s = await findAll(URLS)
-  if (s) {
-    ctx.reply(s, { parse_mode: "Markdown" })
-  } else {
-    ctx.reply("Ничего не нашёл :(")
+bot.start(startCommand)
+bot.help(helpCommand)
+bot.command("whoisthis", whoisthisCommand)
+bot.command("check", checkCommand)
+bot.command("config", configCommand)
+bot.command("unsubscribe", ctx => {
+  if (!initIds.includes(ctx.from.id)) {
+    ctx.reply("Вы не подписаны на рассылку")
+    return
   }
-})
-bot.command("config", ctx => {
-  ctx.reply(`
-Я смотрю на следующие ссылки:
-${URLS.map(url => `- [${url.name}](${url.link})`).join("\n")}
-`, { parse_mode: "Markdown" })
+  initIds.splice(initIds.find(id => id !== ctx.from.id)!)
+  fs.writeFileSync("./src/ids.json", JSON.stringify(initIds))
+  ctx.reply("Вы успешно отписались от рассылки")
 })
 bot.command("subscribe", ctx => {
   if (initIds.includes(ctx.from.id)) {
@@ -60,7 +58,7 @@ console.log("\n\nBot successfully started")
 async function monitoring() {
   console.log("Monitoring", new Date().toLocaleTimeString("ru"))
 
-  const s = await findAll(URLS)
+  const s = await findAll()
   if (s) {
     ids.forEach(id => bot.telegram.sendMessage(id, s, { parse_mode: "Markdown" }))
   }

@@ -1,4 +1,4 @@
-import { URLS } from "./url"
+import config from "./config.json"
 
 type Found = {
   Trains: {
@@ -44,8 +44,8 @@ ${new Date(t.ArrivalDateTime).toLocaleString("ru").slice(0, -3)}
 `
 }
 
-export async function findAll(urls: typeof URLS) {
-  const results = await (await Promise.all(urls.map(url => findTrains(url.url, url.link, url.name)))).filter(r => r) as string[]
+export async function findAll() {
+  const results = await (await Promise.all(config.map(url => findTrains(url.url, url.link, url.name)))).filter(r => r) as string[]
   if (!results.length) {
     return
   }

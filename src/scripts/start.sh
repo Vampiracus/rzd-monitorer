@@ -1,3 +1,4 @@
+./src/scripts/pre.sh
 # Starts the bot
 echo "Print the bot token..."
 read BOT_TOKEN
